@@ -116,18 +116,27 @@ def split_train_test_Kfold(output_raw, input_preprocessed):
 
     return input_train, output_train, input_test, output_test
 
-def data_augmentation_basic(input_train, output_train, repetitions = 6):
-    # Select the rows with a canalisation breaks
-    ID_2014 = output_train[output_train['2014']==1].index.tolist()
-    ID_2015 = output_train[output_train['2015']==1].index.tolist()
-    ID_train = output_train[(output_train['2015']!=1) & (output_train['2014']!=1)].index.tolist()
+def data_augmentation_basic(input_train, output_train, year='both', repetitions = 6):
 
-    # Augment data with breaks to counter unbalanced dataset only for training
-    input_train_duplicate = input_train
-    output_train_duplicate = output_train
-    REPETITIONS = repetitions
-    for k in range(0,REPETITIONS):
-        input_train_duplicate = pd.concat([input_train_duplicate.loc[ID_2014],input_train_duplicate.loc[ID_2015],input_train_duplicate])
-        output_train_duplicate = pd.concat([output_train_duplicate.loc[ID_2014],output_train_duplicate.loc[ID_2015],output_train_duplicate])
+    if type(year) == int:
+        ID= output_train[output_train[str(year)]==1].index.tolist()
+        # Augment data with breaks to counter unbalanced dataset only for training
+        input_train_duplicate = input_train
+        output_train_duplicate = output_train
+        REPETITIONS = repetitions
+        for k in range(0,REPETITIONS):
+            input_train_duplicate = pd.concat([input_train_duplicate.loc[ID],input_train_duplicate])
+            output_train_duplicate = pd.concat([output_train_duplicate.loc[ID],output_train_duplicate])
+    else:
+        # Select the rows with a canalisation breaks
+        ID_2014 = output_train[output_train['2014']==1].index.tolist()
+        ID_2015 = output_train[output_train['2015']==1].index.tolist()
+        # Augment data with breaks to counter unbalanced dataset only for training
+        input_train_duplicate = input_train
+        output_train_duplicate = output_train
+        REPETITIONS = repetitions
+        for k in range(0,REPETITIONS):
+            input_train_duplicate = pd.concat([input_train_duplicate.loc[ID_2014],input_train_duplicate.loc[ID_2015],input_train_duplicate])
+            output_train_duplicate = pd.concat([output_train_duplicate.loc[ID_2014],output_train_duplicate.loc[ID_2015],output_train_duplicate])
 
     return input_train_duplicate, output_train_duplicate
