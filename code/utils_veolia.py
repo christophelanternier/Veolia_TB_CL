@@ -130,6 +130,7 @@ def split_train_test_stratified_shuffle(output_raw, input_preprocessed, test_siz
         train_index = train_index+1
         input_train, input_test = input_preprocessed.loc[train_index], input_preprocessed.loc[test_index]
         output_train, output_test = output_raw.loc[train_index], output_raw.loc[test_index]
+        
     return input_train, output_train, input_test, output_test
 
 def data_augmentation_basic(input_train, output_train, year='both', repetitions = 6):
