@@ -13,7 +13,7 @@ from sklearn.cross_validation import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.cross_validation import StratifiedKFold, StratifiedShuffleSplit
 
 def score_function(Y_true, Y_pred):
 
@@ -28,10 +28,16 @@ def score_function(Y_true, Y_pred):
     return AUC
 
 def print_repartition(output):
-    print "Repartition train: "
-    print "2015: ", output[output['2015'] == 1].shape[0]
-    print "2014: ", output[output['2014'] == 1].shape[0]
-    print "Not Broken: ", output[(output['2015']!=1) & (output['2014']!=1)].shape[0]
+    try:
+        output[output['2015'] == 1].shape[0]
+        print "Repartition train: "
+        print "2015: ", output[output['2015'] == 1].shape[0]
+        print "2014: ", output[output['2014'] == 1].shape[0]
+        print "Not Broken: ", output[(output['2015']!=1) & (output['2014']!=1)].shape[0]
+    except:
+        print "Repartition train: "
+        print "Broken", sum(output)
+        print "Not Broken: ", len(output)-sum(output)
 
 def load_data():
    '''
@@ -103,9 +109,9 @@ def preprocess_output(dataframe,year=2014):
     return dataframe[str(year)]
 
 
-def split_train_test_Kfold(output_raw, input_preprocessed):
+def split_train_test_Kfold(output_raw, input_preprocessed, year):
 
-    output_bool = (output_raw['2014'] + output_raw['2015'])>0
+    output_bool = (output_raw[str(year)])>0
     skf = StratifiedKFold(output_bool,n_folds=2, shuffle=True)
     for k, [train_index, test_index] in enumerate(skf):
         #print("TRAIN:", train_index+1, "TEST:", test_index+1)
@@ -114,6 +120,16 @@ def split_train_test_Kfold(output_raw, input_preprocessed):
         input_train, input_test = input_preprocessed.loc[train_index], input_preprocessed.loc[test_index]
         output_train, output_test = output_raw.loc[train_index], output_raw.loc[test_index]
 
+    return input_train, output_train, input_test, output_test
+
+def split_train_test_stratified_shuffle(output_raw, input_preprocessed, test_size, year):
+    output_bool = (output_raw[str(year)])>0
+    sss = StratifiedShuffleSplit(output_bool, n_iter=1, test_size=test_size)
+    for train_index, test_index in sss:
+        test_index = test_index+1
+        train_index = train_index+1
+        input_train, input_test = input_preprocessed.loc[train_index], input_preprocessed.loc[test_index]
+        output_train, output_test = output_raw.loc[train_index], output_raw.loc[test_index]
     return input_train, output_train, input_test, output_test
 
 def data_augmentation_basic(input_train, output_train, year='both', repetitions = 6):
@@ -127,6 +143,8 @@ def data_augmentation_basic(input_train, output_train, year='both', repetitions 
         for k in range(0,REPETITIONS):
             input_train_duplicate = pd.concat([input_train_duplicate.loc[ID],input_train_duplicate])
             output_train_duplicate = pd.concat([output_train_duplicate.loc[ID],output_train_duplicate])
+
+        return input_train_duplicate, output_train_duplicate[str(year)]
     else:
         # Select the rows with a canalisation breaks
         ID_2014 = output_train[output_train['2014']==1].index.tolist()
@@ -139,4 +157,4 @@ def data_augmentation_basic(input_train, output_train, year='both', repetitions 
             input_train_duplicate = pd.concat([input_train_duplicate.loc[ID_2014],input_train_duplicate.loc[ID_2015],input_train_duplicate])
             output_train_duplicate = pd.concat([output_train_duplicate.loc[ID_2014],output_train_duplicate.loc[ID_2015],output_train_duplicate])
 
-    return input_train_duplicate, output_train_duplicate
+        return input_train_duplicate, output_train_duplicate
