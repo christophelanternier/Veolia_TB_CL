@@ -1,11 +1,9 @@
 import pandas as pd
-import pandas as pd
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sklearn
 from sklearn.metrics import roc_auc_score
-import numpy as np
 
 
 from sklearn.preprocessing import normalize
@@ -30,14 +28,14 @@ def score_function(Y_true, Y_pred):
 def print_repartition(output):
     try:
         output[output['2015'] == 1].shape[0]
-        print "Repartition train: "
-        print "2015: ", output[output['2015'] == 1].shape[0]
-        print "2014: ", output[output['2014'] == 1].shape[0]
-        print "Not Broken: ", output[(output['2015']!=1) & (output['2014']!=1)].shape[0]
+        print("Repartition train: ")
+        print("2015: ", output[output['2015'] == 1].shape[0])
+        print("2014: ", output[output['2014'] == 1].shape[0])
+        print("Not Broken: ", output[(output['2015']!=1) & (output['2014']!=1)].shape[0])
     except:
-        print "Repartition train: "
-        print "Broken", sum(output)
-        print "Not Broken: ", len(output)-sum(output)
+        print("Repartition train: ")
+        print("Broken", sum(output))
+        print("Not Broken: ", len(output)-sum(output))
 
 def load_data():
    '''
@@ -73,6 +71,7 @@ def basic_preprocessing(dataframe):
    X = X.fillna(-1)
    return X
 
+
 def preprocess(dataframe,year=2014, more_features = False):
     X = dataframe
 
@@ -99,7 +98,12 @@ def preprocess(dataframe,year=2014, more_features = False):
         col = X.columns[4:]
         for c in col:
             for u in col:
-                X[c+u] = X[c]*X[u]
+              X[c+u+'and'] = X[c]*X[u]
+              X[c+u+'or'] = [min(1,w) for w in (X[c]+X[u])]
+              for w in col:
+                X[c+u+w+'and'] = X[c]*X[u]*X[w]
+                
+                
     return X
 
 def preprocess_output(dataframe,year=2014):
