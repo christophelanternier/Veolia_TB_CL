@@ -77,15 +77,22 @@ def preprocess(dataframe,year=2014, more_features = False):
 
     # The relevant value is the age of the pipes
     X['Age'] = year - X['YearConstruction']
-    X = X.fillna(10000)
+    X = X.fillna(3000)
 
     # How long has it been since last failure
     X['YearsOldLastFailure'] = year - X['YearLastFailureObserved']
 
     # Categorical data
-    X = pd.concat([X,pd.get_dummies(X['Feature1'])],axis=1)
-    X = pd.concat([X,pd.get_dummies(X['Feature2'])],axis=1)
-    X = pd.concat([X,pd.get_dummies(X['Feature4'])],axis=1)
+    dummies_f1 = pd.get_dummies(X['Feature1'])
+    dummies_f2 = pd.get_dummies(X['Feature2'])
+    dummies_f4 = pd.get_dummies(X['Feature4'])
+    X = pd.concat([X, dummies_f1],axis=1)
+    X = pd.concat([X, dummies_f2],axis=1)
+    X = pd.concat([X, dummies_f4],axis=1)
+    # Get the list of corresponding names
+    dummies_f1 = pd.get_dummies(X['Feature1']).columns
+    dummies_f2 = pd.get_dummies(X['Feature2']).columns
+    dummies_f4 = pd.get_dummies(X['Feature4']).columns
 
     X = X.drop(["YearConstruction","YearLastFailureObserved","Feature1","Feature2","Feature4"],axis=1)
 
@@ -94,19 +101,48 @@ def preprocess(dataframe,year=2014, more_features = False):
     X['Age'] = normalize(X['Age']).tolist()[0]
     X['YearsOldLastFailure'] = normalize(X['YearsOldLastFailure']).tolist()[0]
 
+    #X['Volume'] = X['Length']*X['Feature3']*X['Feature3']
+
+    
     if more_features:
-        col = X.columns[4:]
-        for c in col:
-            for u in col:
-              X[c+u+'and'] = X[c]*X[u]
-              X[c+u+'or'] = [min(1,w) for w in (X[c]+X[u])]
-              for w in col:
-                X[c+u+w+'and'] = X[c]*X[u]*X[w]
-                
+      # Compute interesting binary pairs
+      for col_name1 in dummies_f1:
+        for col_name2 in dummies_f2:
+          X[col_name1+col_name2+'and'] = X[col_name1]*X[col_name2]
+          X[col_name1+col_name2+'or'] = [min(1,w) for w in (X[col_name1]+X[col_name2])]
+
+        for col_name4 in dummies_f4:
+          X[col_name1+col_name4+'and'] = X[col_name1]*X[col_name4]
+          X[col_name1+col_name4+'or'] = [min(1,w) for w in (X[col_name1]+X[col_name4])]
+
+      for col_name2 in dummies_f2:
+        for col_name4 in dummies_f4:
+          X[col_name2+col_name4+'and'] = X[col_name2]*X[col_name4]
+          X[col_name2+col_name4+'or'] = [min(1,w) for w in (X[col_name2]+X[col_name4])]
+
+      # Compute interesting binary triplets
+      for c in dummies_f1:
+        for u in dummies_f2:
+          for w in dummies_f4:
+            X[c+u+w+'and'] = X[c]*X[u]*X[w]
+            X[c+u+w+'or'] = [min(1,w) for w in (X[c]+X[u]+X[w])]
+
+
+    #if more_features:
+    #    col = X.columns[4:]
+    #    for c in col:
+    #        for u in col:
+    #          X[c+u+'and'] = X[c]*X[u]
+    #          X[c+u+'or'] = [min(1,w) for w in (X[c]+X[u])]
+    #          for w in col:
+    #            X[c+u+w+'and'] = X[c]*X[u]*X[w]
+                #X[c+u+w+'or'] = [min(1,w) for w in (X[c]+X[u]+X[w])]
                 
     return X
 
-def preprocess_output(dataframe,year=2014):
+
+
+def preprocess_output(dataframe, year=2014):
     '''
     Selects the right colum for the year studied
     '''
