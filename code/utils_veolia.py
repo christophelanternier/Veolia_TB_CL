@@ -72,7 +72,7 @@ def basic_preprocessing(dataframe):
    return X
 
 
-def preprocess(dataframe,year=2014, more_features = False):
+def preprocess(dataframe,year=2014, _and= False, _or = False, triple_and = False):
     X = dataframe
 
     # The relevant value is the age of the pipes
@@ -94,16 +94,17 @@ def preprocess(dataframe,year=2014, more_features = False):
     X['Age'] = normalize(X['Age']).tolist()[0]
     X['YearsOldLastFailure'] = normalize(X['YearsOldLastFailure']).tolist()[0]
 
-    if more_features:
+    if _and:
         col = X.columns[4:]
         for c in col:
             for u in col:
-              X[c+u+'and'] = X[c]*X[u]
-              X[c+u+'or'] = [min(1,w) for w in (X[c]+X[u])]
-              for w in col:
-                X[c+u+w+'and'] = X[c]*X[u]*X[w]
-                
-                
+                X[c+u+'and'] = X[c]*X[u]
+                if _or:
+                    X[c+u+'or'] = [min(1,w) for w in (X[c]+X[u])]
+                if triple_and:
+                    for w in col:
+                        X[c+u+w+'and'] = X[c]*X[u]*X[w]
+
     return X
 
 def preprocess_output(dataframe,year=2014):
@@ -134,7 +135,7 @@ def split_train_test_stratified_shuffle(output_raw, input_preprocessed, test_siz
         train_index = train_index+1
         input_train, input_test = input_preprocessed.loc[train_index], input_preprocessed.loc[test_index]
         output_train, output_test = output_raw.loc[train_index], output_raw.loc[test_index]
-        
+
     return input_train, output_train, input_test, output_test
 
 def data_augmentation_basic(input_train, output_train, year='both', repetitions = 6):
